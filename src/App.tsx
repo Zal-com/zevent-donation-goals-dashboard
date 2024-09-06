@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 import './index.css';
 import { UserIcon } from '@heroicons/react/16/solid';
-import AnimatedNumbers from "react-animated-numbers";
+import AnimatedNumbers from 'react-animated-numbers';
 
 interface ApiData {
   live: Streamer[];
@@ -47,16 +47,13 @@ interface Goal {
 function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [apiData, setApiData] = useState<ApiData | null>(null);
-  const [previousDonationAmount, setPreviousDonationAmount] = useState<number | null>(null);
-  const [animate, setAnimate] = useState<boolean>(false);
-  const [initialLoad, setInitialLoad] = useState<boolean>(true);
-  const [cagnotte, setCagnotte] = useState<number | null>(null)
+  const [cagnotte, setCagnotte] = useState<number>(0);
 
   async function getApiData() {
     const response = await fetch('https://cors-anywhere.herokuapp.com/https://zevent.fr/api', {
       method: 'GET',
       headers: {
-        Origin: 'http://localhost:3000', // or your app's origin
+        Origin: 'http://localhost:8000', // or your app's origin
       },
     });
     const data = await response.json();
@@ -65,28 +62,15 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (initialLoad) {
-        setLoading(true);
-      }
-
       try {
         const data: ApiData = await getApiData();
-        if (apiData) {
-          // Check if the donation amount has changed
-          if (data.donationAmount.number !== apiData.donationAmount.number) {
-            setPreviousDonationAmount(apiData.donationAmount.number);
-            setAnimate(true);
-            setTimeout(() => setAnimate(false), 1000); // Remove animation after 1s
-          }
-        }
         setApiData(data);
-        setCagnotte(data.donationAmount?.number)
+        setCagnotte(data.donationAmount.number); // Update the state to trigger animation
       } catch (error) {
         console.error('Error fetching data:', error);
       }
 
       setLoading(false);
-      setInitialLoad(false);
     };
 
     fetchData(); // Call fetchData when the component mounts
@@ -96,16 +80,7 @@ function App() {
 
     // Clean up the interval on component unmount
     return () => clearInterval(interval);
-  }, [apiData, initialLoad]); // Include `apiData` in the dependency array to detect changes
-
-  // Split donation amount into individual characters for the spin animation
-  const renderSpinningNumbers = (formattedAmount: string) => {
-    return formattedAmount.split('').map((char, index) => (
-      <span key={index} className={`spin-number ${animate ? 'animate' : ''}`}>
-        <span>{char}</span>
-      </span>
-    ));
-  };
+  }, []); // Empty dependency array to only run once on mount
 
   return (
     <div className="container mx-auto p-4">
@@ -119,21 +94,23 @@ function App() {
             <h1 className="flex flex-1 justify-center text-3xl font-bold w-full align-center">
               Cagnotte globale
             </h1>
-            <h2
-              className="flex flex-1 justify-center text-5xl font-black w-full align-center"
-            >
+            <h2 className="flex flex-1 justify-center text-5xl font-black w-full align-center">
               <AnimatedNumbers
-              transitions={(index) => ({
-                type: "spring",
-                duration: index + 0.3,
-              })}
-              locale='fr-FR'
-              animateToNumber={cagnotte!}
-              fontStyle={{
-                fontSize: 40,
-                color: "green",
-                fontWeight: 900,
-              }}
+                includeComma
+                animateToNumber={cagnotte} // Use cagnotte state here
+                fontStyle={{
+                  fontSize: 40,
+                  color: 'green',
+                  fontWeight: 900,
+                }}
+                // @ts-ignore
+                configs={[
+                  { mass: 1, tension: 220, friction: 100 },
+                  { mass: 1, tension: 180, friction: 130 },
+                  { mass: 1, tension: 280, friction: 90 },
+                  { mass: 1, tension: 260, friction: 140 },
+                  { mass: 1, tension: 210, friction: 180 },
+                ]}
               />
               €
             </h2>
