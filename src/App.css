@@ -36,3 +36,25 @@
     transform: rotate(360deg);
   }
 }
+
+@keyframes spin {
+  0% {
+    transform: rotateX(0deg);
+  }
+  100% {
+    transform: rotateX(360deg);
+  }
+}
+
+.spin-number {
+  display: inline-block;
+  perspective: 1000px; /* Adds perspective to enhance the 3D effect */
+}
+
+.spin-number span {
+  display: inline-block;
+  transform-origin: center;
+  transform: rotateX(0deg);
+  animation: spin 0.5s ease-in-out forwards;
+}
+
