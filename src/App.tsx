@@ -68,7 +68,7 @@ function App() {
     const response = await fetch('https://cors-anywhere.herokuapp.com/https://zevent.fr/api', {
       method: 'GET',
       headers: {
-        Origin: 'http://localhost:3000', // or your app's origin
+        Origin: 'http://localhost', // or your app's origin
       },
     });
     if (response.status === 429) {
@@ -84,11 +84,7 @@ function App() {
       try {
         const data: ApiData = await getApiData();
         setApiData(data);
-
-        // Only set the cagnotte when fetching the API data, not during search
-        if (data.donationAmount) {
-          setCagnotte(data.donationAmount.number); // Update the state to trigger animation
-        }
+        setCagnotte(data.donationAmount.number); // Update the state to trigger animation
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -103,7 +99,7 @@ function App() {
 
     // Clean up the interval on component unmount
     return () => clearInterval(interval);
-  }); // Empty dependency array to only run once on mount
+  }, []); // Empty dependency array to only run once on mount
 
   // Filter the streamers based on the search term
   const filteredStreamers = apiData?.live.filter(streamer =>
@@ -131,36 +127,15 @@ function App() {
             <h1 className="flex flex-1 justify-center text-3xl font-bold w-full align-center">
               Cagnotte globale
             </h1>
-            <h2 className="flex flex-1 justify-center items-center text-5xl font-black w-full align-center text-green-900">
-              <AnimatedNumbers
-                includeComma
-                transitions={(index) => ({
-                  type: "spring",
-                  duration: index + 0.5,
-                })}
-                animateToNumber={cagnotte} // Use cagnotte state here
-                fontStyle={{
-                  fontSize: 40,
-                  color: 'green',
-                  fontWeight: 900,
-                }}
-                // @ts-ignore
-                configs={[
-                  { mass: 1, tension: 220, friction: 100 },
-                  { mass: 1, tension: 180, friction: 130 },
-                  { mass: 1, tension: 280, friction: 90 },
-                  { mass: 1, tension: 260, friction: 140 },
-                  { mass: 1, tension: 210, friction: 180 },
-                ]}
-              />
-              €
+            <h2 className="flex flex-1 justify-center items-center text-5xl font-black w-full align-center text-green-500">
+      {apiData.donationAmount.formatted}
             </h2>
             <div className='my-4'>
               <input
                 type='text'
                 name='search'
                 placeholder='Chercher un streamer'
-                className='w-full p-2 rounded-md border-gray-500 dark:border-darkCard dark:bg-darkCard'
+                className='w-full p-2 rounded-md border-gray-500 dark:border-darkCard dark:bg-darkCard shadow'
                 onChange={handleSearch} // Attach the handleSearch function to input changes
               />
             </div>
