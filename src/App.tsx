@@ -48,14 +48,33 @@ function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [apiData, setApiData] = useState<ApiData | null>(null);
   const [cagnotte, setCagnotte] = useState<number>(0);
+  const [searchTerm, setSearchTerm] = useState<string>(''); // Add state for search term
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Handle search input
+  function handleSearch(event: React.ChangeEvent<HTMLInputElement>) {
+    setSearchTerm(event.target.value.toLowerCase()); // Update search term, making it lowercase
+  }
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
 
   async function getApiData() {
     const response = await fetch('https://cors-anywhere.herokuapp.com/https://zevent.fr/api', {
       method: 'GET',
       headers: {
-        Origin: 'http://localhost:8000', // or your app's origin
+        Origin: 'http://localhost:3000', // or your app's origin
       },
     });
+    if (response.status === 429) {
+      // Wait for 60 seconds before retrying
+      setTimeout(getApiData, 60000);
+    }
     const data = await response.json();
     return data;
   }
@@ -65,7 +84,11 @@ function App() {
       try {
         const data: ApiData = await getApiData();
         setApiData(data);
-        setCagnotte(data.donationAmount.number); // Update the state to trigger animation
+
+        // Only set the cagnotte when fetching the API data, not during search
+        if (data.donationAmount) {
+          setCagnotte(data.donationAmount.number); // Update the state to trigger animation
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -80,10 +103,24 @@ function App() {
 
     // Clean up the interval on component unmount
     return () => clearInterval(interval);
-  }, []); // Empty dependency array to only run once on mount
+  }); // Empty dependency array to only run once on mount
+
+  // Filter the streamers based on the search term
+  const filteredStreamers = apiData?.live.filter(streamer =>
+    streamer.display.toLowerCase().includes(searchTerm)
+  );
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="w-full px-5 p-4 bg-white dark:bg-darkBg text-black dark:text-darkText">
+      {/* Add a button to toggle dark mode */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className="bg-gray-800 text-white px-4 py-2 rounded-lg"
+        >
+          Toggle Dark Mode
+        </button>
+      </div>
       {loading ? (
         <h1>Loading...</h1>
       ) : !apiData ? (
@@ -94,9 +131,13 @@ function App() {
             <h1 className="flex flex-1 justify-center text-3xl font-bold w-full align-center">
               Cagnotte globale
             </h1>
-            <h2 className="flex flex-1 justify-center text-5xl font-black w-full align-center">
+            <h2 className="flex flex-1 justify-center items-center text-5xl font-black w-full align-center text-green-900">
               <AnimatedNumbers
                 includeComma
+                transitions={(index) => ({
+                  type: "spring",
+                  duration: index + 0.5,
+                })}
                 animateToNumber={cagnotte} // Use cagnotte state here
                 fontStyle={{
                   fontSize: 40,
@@ -114,12 +155,22 @@ function App() {
               />
               €
             </h2>
+            <div className='my-4'>
+              <input
+                type='text'
+                name='search'
+                placeholder='Chercher un streamer'
+                className='w-full p-2 rounded-md border-gray-500 dark:border-darkCard dark:bg-darkCard'
+                onChange={handleSearch} // Attach the handleSearch function to input changes
+              />
+            </div>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {apiData.live.map((streamer, index) => (
+            {filteredStreamers?.map((streamer, index) => (
               <div
                 key={index}
-                className={`p-4 rounded-lg shadow-lg ${
+                className={`p-4 rounded-lg shadow-lg dark:bg-darkCard dark:text-darkText ${
                   index % 5 === 0 ? 'col-span-2 row-span-2' : 'col-span-1'
                 }`} // Bento style grid logic: larger items every 5th
               >
