@@ -10,7 +10,7 @@ interface ApiData {
     number: number;
     formatted: string;
   };
-  viewersCount: {
+  viewersAmount: {
     number: number;
     formatted: string;
   };
@@ -24,7 +24,11 @@ interface Streamer {
   viewersAmount: {
     formatted: number;
   };
-  donationGoal: DonationGoal;
+  donationGoal?: DonationGoal;
+  donationAmount?: {
+    formatted: string;
+    number: number;
+  };
 }
 
 interface DonationGoal {
@@ -106,6 +110,15 @@ function App() {
     streamer.display.toLowerCase().includes(searchTerm)
   );
 
+  // Sum of all streamers' personal cagnottes
+  const totalStreamersDonation: number = apiData?.live.reduce((sum, streamer) => {
+    const amount = streamer.donationAmount?.number ?? 0;
+    return sum + amount;
+  }, 0) ?? 0;
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+
   return (
     <div className="w-full px-5 p-4 bg-white dark:bg-darkBg text-black dark:text-darkText">
       {/* Add a button to toggle dark mode */}
@@ -130,6 +143,14 @@ function App() {
             <h2 className="flex flex-1 justify-center items-center text-5xl font-black w-full align-center text-green-500">
       {apiData.donationAmount.formatted}
             </h2>
+            <div className="mt-6">
+              <h1 className="flex flex-1 justify-center text-2xl font-bold w-full align-center">
+                Cagnotte totale des streamers
+              </h1>
+              <h2 className="flex flex-1 justify-center items-center text-4xl font-black w-full align-center text-blue-500">
+                {formatCurrency(totalStreamersDonation)}
+              </h2>
+            </div>
             <div className='my-4'>
               <input
                 type='text'
@@ -166,7 +187,7 @@ function App() {
                   {`${streamer.viewersAmount?.formatted} viewers`}
                 </p>
                 <p>Game: {streamer.game}</p>
-                {!streamer.donationGoal?.hidden && streamer.donationGoal.goals?.length > 0 && (
+                {streamer.donationGoal && !streamer.donationGoal?.hidden && streamer.donationGoal.goals?.length > 0 && (
                   <div className="mt-2">
                     <p className="font-bold text-lg">Donation goals</p>
                     <ul>
@@ -174,7 +195,7 @@ function App() {
                         <li
                           key={idx}
                           className={`${
-                            streamer.donationGoal.donationAmount.number >= goal.amountRequired.number
+                            (streamer.donationGoal?.donationAmount.number ?? 0) >= goal.amountRequired.number
                               ? 'text-green-900 font-bold'
                               : 'text-red-900'
                           }`}
@@ -185,7 +206,7 @@ function App() {
                     </ul>
                   </div>
                 )}
-                <p>Cagnotte personnelle : {streamer.donationGoal?.donationAmount?.formatted}</p>
+                <p>Cagnotte personnelle : {streamer.donationAmount?.formatted ?? '0 €'}</p>
               </div>
             ))}
           </div>
